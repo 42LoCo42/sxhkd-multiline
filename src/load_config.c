@@ -6,22 +6,21 @@
 #include "parse.h"
 #include "load_config.h"
 
-char fdgetc(int stream) {
-	char c = -1;
+#define UMAX ((unsigned short) -1)
+
+unsigned short fdgetc(int stream) {
+	unsigned char c;
 	ssize_t len = read(stream, &c, 1);
-	if(len != 1) {
-		if(len < 0) {
-			warn("fdgetc");
-			return len;
-		}
-		return -2;
+	switch(len) {
+		case  1: return c;
+		case  0: return UMAX;
+		default: warn("read"); return UMAX;
 	}
-	return c;
 }
 
-char fdpeekc(int stream) {
-	char c = -1;
-	if((c = fdgetc(stream)) > -1) {
+unsigned short fdpeekc(int stream) {
+	unsigned short c;
+	if((c = fdgetc(stream)) != UMAX) {
 		if(lseek(stream, -1, SEEK_CUR) < 0) {
 			warn("fseek");
 		}
@@ -30,10 +29,10 @@ char fdpeekc(int stream) {
 }
 
 ssize_t gotoNext(int stream, char end) {
-	char c;
+	unsigned short c;
 	ssize_t len = 0;
 	for(;;) {
-		if((c = fdgetc(stream)) < 0) {
+		if((c = fdgetc(stream)) == UMAX) {
 			return -1;
 		}
 		++len;
@@ -58,7 +57,6 @@ ssize_t findNext(int stream, char end) {
 
 void processCommand(int* command_ready, char* chain, char* command) {
 	if(*command_ready) {
-		printf("%s :: %s", chain, command);
 		process_hotkey(chain, command);
 	}
 	*command_ready = 0;
@@ -92,7 +90,7 @@ void load_config(const char* config_file) {
 	int command_ready = 0;
 
 	for(;;) {
-		char here = fdpeekc(cfg);
+		unsigned short here = fdpeekc(cfg);
 		if(here == '\t') {
 			// read command
 			ssize_t len;
@@ -101,8 +99,7 @@ void load_config(const char* config_file) {
 			for(;;) {
 				if((len = gotoNext(cfg, '\n')) < 0) goto end;
 				total += len;
-				char c = fdpeekc(cfg);
-				if(c == -1) goto end;
+				unsigned short c = fdpeekc(cfg);
 				if(c != '\t') break;
 			}
 
@@ -117,7 +114,7 @@ void load_config(const char* config_file) {
 			command_ready = 1;
 		} else {
 			processCommand(&command_ready, chain, command);
-			if(here < 0) break; // EOF
+			if(here == UMAX) break; // EOF
 
 			// read chain
 			ssize_t len;
