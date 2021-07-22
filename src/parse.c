@@ -2368,53 +2368,6 @@ keysym_dict_t nks_dict[] = {/*{{{*/
 #endif
 };/*}}}*/
 
-void load_config(const char *config_file)
-{
-	PRINTF("load configuration '%s'\n", config_file);
-	FILE *cfg = fopen(config_file, "r");
-	if (cfg == NULL)
-		err("Can't open configuration file: '%s'.\n", config_file);
-
-	char buf[3 * MAXLEN];
-	char chain[MAXLEN] = {0};
-	char command[2 * MAXLEN] = {0};
-	int offset = 0;
-	char first;
-
-	while (fgets(buf, sizeof(buf), cfg) != NULL) {
-		first = buf[0];
-		if (strlen(buf) < 2 || first == START_COMMENT) {
-			continue;
-		} else {
-			char *start = lgraph(buf);
-			if (start == NULL)
-				continue;
-			char *end = rgraph(buf);
-			*(end + 1) = '\0';
-
-			if (isgraph(first))
-				snprintf(chain + offset, sizeof(chain) - offset, "%s", start);
-			else
-				snprintf(command + offset, sizeof(command) - offset, "%s", start);
-
-			if (*end == PARTIAL_LINE) {
-				offset += end - start;
-				continue;
-			} else {
-				offset = 0;
-			}
-
-			if (isspace(first) && strlen(chain) > 0 && strlen(command) > 0) {
-				process_hotkey(chain, command);
-				chain[0] = '\0';
-				command[0] = '\0';
-			}
-		}
-	}
-
-	fclose(cfg);
-}
-
 void parse_event(xcb_generic_event_t *evt, uint8_t event_type, xcb_keysym_t *keysym, xcb_button_t *button, uint16_t *modfield)
 {
 	if (event_type == XCB_KEY_PRESS) {

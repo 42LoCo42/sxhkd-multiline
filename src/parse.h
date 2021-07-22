@@ -51,7 +51,6 @@ struct chunk_t {
 	chunk_t *next;
 };
 
-void load_config(const char *config_file);
 void parse_event(xcb_generic_event_t *evt, uint8_t event_type, xcb_keysym_t *keysym, xcb_button_t *button, uint16_t *modfield);
 void process_hotkey(char *hotkey_string, char *command_string);
 char *get_token(char *dst, char *ign, char *src, char *sep);

@@ -35,6 +35,7 @@
 #include <stdbool.h>
 #include "parse.h"
 #include "grab.h"
+#include "load_config.h"
 
 xcb_connection_t *dpy;
 xcb_window_t root;
